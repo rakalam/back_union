@@ -19,6 +19,10 @@ class Personnel extends Model
         'prenom',
         'date_naissance',
         'sexe',
+        'photos',
+        'contact',
+        'cin',
+        'adresse',
         'nb_retard',
         'nb_absent',
     ];

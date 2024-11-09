@@ -174,16 +174,31 @@ class RetardController extends Controller
 
     public function suprimer_retard($id){
 
+
+
+        // Récupère le mois actuel
+        $currentMonth = Carbon::now()->month;
+
         $message = "";
         $existe_retard = Retard::find($id);
         if($existe_retard){
-            $existe_retard->delete();
+            $date_ret = $existe_retard->date_retard;
+            // Convertit la date en instance de Carbon
+            $date_ret_carbon = Carbon::parse($date_ret);
 
-            //algorithme pour diminuer le nombre de retard
-            $personnel_en_question = Personnel::find($existe_retard->id_personnel);//chercher le personnel qui va etre pointer
-            $nb_absent_a_jour = $personnel_en_question->nb_retard - 1;
-            $personnel_en_question->nb_retard = $nb_absent_a_jour;
-            $personnel_en_question->save();
+            if($date_ret_carbon->month === $currentMonth){
+                //algorithme pour diminuer le nombre de retard
+                $personnel_en_question = Personnel::find($existe_retard->id_personnel);//chercher le personnel qui va etre pointer
+                $nb_absent_a_jour = $personnel_en_question->nb_retard - 1;
+                $personnel_en_question->nb_retard = $nb_absent_a_jour;
+                $personnel_en_question->save();
+            }
+            try {
+                $existe_retard->delete();
+
+            } catch (QueryException $e) {
+                $message = $e->getMessage();
+            }
 
             $message = "Supression avec succès";
         }else{

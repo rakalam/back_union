@@ -41,16 +41,21 @@ class MelangeController extends Controller
 
 
       public function planning_retard_absent_personnel($id){
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
         $retards = Retard::with('personnel')
         ->where('id_personnel', $id)
+        ->whereRaw('EXTRACT(MONTH FROM TO_DATE(date_retard, \'YYYY-MM-DD\')) = ?', [$currentMonth])
+        ->whereRaw('EXTRACT(YEAR FROM TO_DATE(date_retard, \'YYYY-MM-DD\')) = ?', [$currentYear])
         ->orderBy('id', 'desc')
-        ->limit(7)
         ->get();
+
 
         $absents = Absent::with('personnel')
         ->where('id_personnel', $id)
+        ->whereRaw('EXTRACT(MONTH FROM TO_DATE(date_absent, \'YYYY-MM-DD\')) = ?', [$currentMonth])
+        ->whereRaw('EXTRACT(YEAR FROM TO_DATE(date_absent, \'YYYY-MM-DD\')) = ?', [$currentYear])
         ->orderBy('id', 'desc')
-        ->limit(7)
         ->get();
 
            $plannings = Planning::where('id_personnel', $id)->first();
