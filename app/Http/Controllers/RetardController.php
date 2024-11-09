@@ -212,8 +212,7 @@ class RetardController extends Controller
 
     //selection retard
     public function select_retard_simplement(){
-        $donnes = Retard::with('personnel')->orderBy('id', 'desc')->get();
-
+        $donnes = Retard::with('personnel')->orderBy('id', 'desc')->limit(35)->get();
         return response()->json([
            "donnes"=>$donnes
         ]);

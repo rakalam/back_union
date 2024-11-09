@@ -163,7 +163,7 @@ class AbsentController extends Controller
 
 
     public function select_absent_simplement(){
-        $donnes = Absent::with('personnel')->orderBy('id', 'desc')->get();
+        $donnes = Absent::with('personnel')->orderBy('id', 'desc')->limit(35)->get();
         return response()->json([
              "donnes"=>$donnes
          ]);
