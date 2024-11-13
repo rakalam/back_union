@@ -23,6 +23,7 @@ class Personnel extends Model
         'contact',
         'cin',
         'adresse',
+        'original_filename',
         'nb_retard',
         'nb_absent',
     ];

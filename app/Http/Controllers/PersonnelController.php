@@ -13,10 +13,10 @@ class PersonnelController extends Controller
 {
 
 
-    //ajout personnel
     public function ajout_personnel(Request $request)
     {
         $message = "";
+
         try {
             // Validation des données pour un personnel
             $validatedData = $request->validate([
@@ -30,7 +30,6 @@ class PersonnelController extends Controller
                 'photos' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
-            // Extraction des données après validation
             $nom = $validatedData['nom'];
             $prenom = $validatedData['prenom'];
             $date_naissance = $validatedData['date_naissance'];
@@ -39,47 +38,57 @@ class PersonnelController extends Controller
             $contact = $validatedData['contact'];
             $cin = $validatedData['cin'];
             $photos = $validatedData['photos'] ?? null;
+            $originalFilename = null;  // Initialisation de $originalFilename par défaut
 
             // Gestion de l'image si elle est présente
             if ($photos) {
+                $originalFilename = $photos->getClientOriginalName();
+                // Vérifier si le nom d'origine existe déjà
+                if (Personnel::where('original_filename', $originalFilename)->exists()) {
+                    return response()->json([
+                        "message" => "Une image avec ce nom existe déjà."
+                    ]);
+                }
+
+                // Nom aléatoire pour le stockage
                 $photo_name = Str::random(32) . "." . $photos->getClientOriginalExtension();
                 Storage::disk('public')->put($photo_name, file_get_contents($photos));
             } else {
-                $photo_name = null; // Aucun fichier d'image
+                $photo_name = null;  // Aucun fichier d'image
             }
 
             // Création d'un avatar à partir du nom et prénom
             $avatar = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
-            try {
-                // Création du personnel avec valeurs par défaut
-                $personnel = Personnel::create([
-                    "avatar" => $avatar,
-                    "nom" => $nom,
-                    "prenom" => $prenom,
-                    "date_naissance" => $date_naissance,
-                    "sexe" => $sexe,
-                    "adresse" => $adresse,
-                    "contact" => $contact,
-                    "cin" => $cin,
-                    "photos" => $photo_name,
-                ]);
 
-                // Création de l'activité liée
-                $titre = "Concernant Personnel";
-                $description = "Nouveau personnel ajouté : " . $avatar;
-                Activite::create([
-                    "titre_activite" => $titre,
-                    "description" => $description,
-                    "status" => "Personnel",
-                ]);
+            // Création du personnel avec valeurs par défaut
+            $personnel = Personnel::create([
+                "avatar" => $avatar,
+                "nom" => $nom,
+                "prenom" => $prenom,
+                "date_naissance" => $date_naissance,
+                "sexe" => $sexe,
+                "adresse" => $adresse,
+                "contact" => $contact,
+                "cin" => $cin,
+                "photos" => $photo_name,
+                "original_filename" => $originalFilename, // Affectation directe
+            ]);
 
-                $message = "Le personnel a été enregistré avec succès";
-            } catch (QueryException $e) {
-                if ($e->errorInfo[1] === 1062) {  // Problème sur l'unicité
-                    $message = "Identifiant déjà existant";
-                } else {
-                    $message = "Une erreur est survenue lors de l'ajout du personnel";
-                }
+            // Création de l'activité liée
+            $titre = "Concernant Personnel";
+            $description = "Nouveau personnel ajouté : " . $avatar;
+            Activite::create([
+                "titre_activite" => $titre,
+                "description" => $description,
+                "status" => "Personnel",
+            ]);
+
+            $message = "Le personnel a été enregistré avec succès";
+        } catch (QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {  // Problème sur l'unicité
+                $message = "Identifiant déjà existant";
+            } else {
+                $message = "Une erreur est survenue lors de l'ajout du personnel";
             }
         } catch (\Exception $e) {
             $message = "Validation des champs incorrecte !";
@@ -89,6 +98,8 @@ class PersonnelController extends Controller
            "message" => $message,
         ]);
     }
+
+
 
    //modification d'un personnel
    public function modifie_personnel(Request $request)
@@ -119,7 +130,7 @@ class PersonnelController extends Controller
            $contact = $validatedData['contact'];
            $cin = $validatedData['cin'];
            $photos = $validatedData['photos'] ?? null;
-
+           $originalFilename = null;  // Initialisation de $originalFilename par défaut
            // Création d'un avatar à partir de nom et prénom
            $avatar = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
 
@@ -130,6 +141,14 @@ class PersonnelController extends Controller
                try {
                    // Gestion de la nouvelle image si elle est fournie
                    if ($photos) {
+
+                        $originalFilename = $photos->getClientOriginalName();
+                        // Vérifier si le nom d'origine existe déjà
+                        if (Personnel::where('original_filename', $originalFilename)->exists()) {
+                            return response()->json([
+                                "message" => "Une image avec ce nom existe déjà."
+                            ]);
+                        }
                        $storage = Storage::disk('public');
 
                        // Suppression de l'ancienne image si elle existe
@@ -141,6 +160,7 @@ class PersonnelController extends Controller
                        $photo_name = Str::random(32) . "." . $photos->getClientOriginalExtension();
                        $storage->put($photo_name, file_get_contents($photos));
                        $existe_personnel->photos = $photo_name;
+                       $existe_personnel->original_filename = $originalFilename;
                    }
 
                    // Mise à jour des autres informations
@@ -152,6 +172,7 @@ class PersonnelController extends Controller
                    $existe_personnel->contact = $contact;
                    $existe_personnel->cin = $cin;
                    $existe_personnel->avatar = $avatar;
+
                    $existe_personnel->save();
 
                    // Enregistrement de l'activité
@@ -203,7 +224,7 @@ class PersonnelController extends Controller
             // Suppression du personnel
             $existe_personnel->delete();
             $message = "Suppression de " . $existe_personnel->avatar . " réussie !";
-            
+
         } else {
             $message = "Personnel n'existe pas !";
         }

@@ -51,7 +51,7 @@ return new class extends Migration
 
         Schema::table('retards', function (Blueprint $table) {
             $table->dropForeign(['id_personnel']);
-            $table->foreign('personnel_id')
+            $table->foreign('id_personnel')
                   ->references('id')
                   ->on('personnels');
         });
